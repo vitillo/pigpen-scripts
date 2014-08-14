@@ -5,7 +5,7 @@
 
 (defn osdistribution []
   (->>
-    (pig/load-tsv "input/ping")
+    (pig/load-tsv "input/ping2")
     (pig/map (fn [[id data]]
                (let [parsed (json/read-str data :key-fn keyword)]
                  (get-in parsed [:info :OS]))))
@@ -13,6 +13,15 @@
     (pig/map (fn [[key data]]
                [key (count data)]))))
 
+(defn osdistribution-regexp []
+  (->>
+    (pig/load-tsv "input/ping2")
+    (pig/map (fn [[id data]]
+               (let [parsed (second (re-find #".*\"OS\":\"(\w+)\"" data))]
+                 parsed)))
+    (pig/group-by (fn [data] data))
+    (pig/map (fn [[key data]]
+               [key (count data)]))))
 
 (defn mainthreadio []
   (let [reports (->>
@@ -55,4 +64,4 @@
                          :filename filename
                          :median-ops median-ops))))))
 
-(pig/write-script "my-script.pig" (mainthreadio))
+(pig/write-script "my-script.pig" (osdistribution-regexp))
